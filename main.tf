@@ -38,45 +38,36 @@ resource "azurerm_virtual_network" "hub-vnet" {
   location            = azurerm_resource_group.RG.location
   name                = "AZ-hub-vnet"
   resource_group_name = azurerm_resource_group.RG.name
+  subnet {
+    address_prefix     = "10.0.0.0/24"
+    name                 = "default"
+    security_group = azurerm_network_security_group.hubvnetNSG.id
+  }
+  subnet {
+    address_prefix     = "10.0.1.0/24"
+    name                 = "GatewaySubnet" 
+  }
   timeouts {
     create = "1h"
     read = "1h"
     update = "1h"
     delete = "1h"
   }
-  
-}
-resource "azurerm_subnet" "hubGWsubnet" {
-  address_prefixes     = ["10.0.1.0/24"]
-  name                 = "GatewaySubnet"
-  resource_group_name  = azurerm_virtual_network.hub-vnet.resource_group_name
-  virtual_network_name = "AZ-hub-vnet"
-  timeouts {
-    create = "1h"
-    read = "1h"
-    update = "1h"
-    delete = "1h"
-  }
-  
-}
-resource "azurerm_subnet" "hubdefaultsubnet" {
-  address_prefixes     = ["10.0.0.0/24"]
-  name                 = "default"
-  resource_group_name  = azurerm_virtual_network.hub-vnet.resource_group_name
-  virtual_network_name = "AZ-hub-vnet"
-  timeouts {
-    create = "1h"
-    read = "1h"
-    update = "1h"
-    delete = "1h"
-  }
-  
 }
 resource "azurerm_virtual_network" "spoke-vnet" {
   address_space       = ["10.250.0.0/16"]
-  location            = var.A-location
+  location            = azurerm_resource_group.RG.location
   name                = "AZ-spoke-vnet"
-  resource_group_name = var.B-resource_group_name
+  resource_group_name = azurerm_resource_group.RG.name
+  subnet {
+    address_prefix     = "10.250.0.0/24"
+    name                 = "default"
+    security_group = azurerm_network_security_group.spokevnetNSG.id
+  }
+  subnet {
+    address_prefix     = "10.250.1.0/24"
+    name                 = "GatewaySubnet" 
+  }
   timeouts {
     create = "1h"
     read = "1h"
@@ -85,32 +76,7 @@ resource "azurerm_virtual_network" "spoke-vnet" {
   }
   
 }
-resource "azurerm_subnet" "spokeGWsubnet" {
-  address_prefixes     = ["10.250.1.0/24"]
-  name                 = "GatewaySubnet"
-  resource_group_name  = azurerm_virtual_network.spoke-vnet.resource_group_name
-  virtual_network_name = "AZ-spoke-vnet"
-  timeouts {
-    create = "1h"
-    read = "1h"
-    update = "1h"
-    delete = "1h"
-  }  
-  
-}
-resource "azurerm_subnet" "spokedefaultsubnet" {
-  address_prefixes     = ["10.250.0.0/24"]
-  name                 = "default"
-  resource_group_name  = azurerm_virtual_network.spoke-vnet.resource_group_name
-  virtual_network_name = "AZ-spoke-vnet"
-  timeouts {
-    create = "1h"
-    read = "1h"
-    update = "1h"
-    delete = "1h"
-  }
-  
-}
+
 resource "azurerm_virtual_network_peering" "hubtospokepeering" {
   name                      = "hub-to-spoke-peering"
   remote_virtual_network_id = azurerm_virtual_network.spoke-vnet.id
@@ -154,6 +120,15 @@ resource "azurerm_virtual_network" "onprem-vnet" {
   location            = azurerm_resource_group.RG.location
   name                = "onprem-vnet"
   resource_group_name = azurerm_resource_group.RG.name
+  subnet {
+    address_prefix     = "192.168.0.0/24"
+    name                 = "default"
+    security_group = azurerm_network_security_group.onpremvnetNSG.id
+  }
+  subnet {
+    address_prefix     = "192.168.1.0/24"
+    name                 = "GatewaySubnet" 
+  }
   timeouts {
     create = "1h"
     read = "1h"
@@ -162,32 +137,7 @@ resource "azurerm_virtual_network" "onprem-vnet" {
   }
   
 }
-resource "azurerm_subnet" "onpremGWsubnet" {
-  address_prefixes     = ["192.168.1.0/24"]
-  name                 = "GatewaySubnet"
-  resource_group_name  = azurerm_virtual_network.onprem-vnet.resource_group_name
-  virtual_network_name = "onprem-vnet"
-  timeouts {
-    create = "1h"
-    read = "1h"
-    update = "1h"
-    delete = "1h"
-  }
-  
-}
-resource "azurerm_subnet" "onpremdefaultsubnet" {
-  address_prefixes     = ["192.168.0.0/24"]
-  name                 = "default"
-  resource_group_name  = azurerm_virtual_network.onprem-vnet.resource_group_name
-  virtual_network_name = "onprem-vnet"
-  timeouts {
-    create = "1h"
-    read = "1h"
-    update = "1h"
-    delete = "1h"
-  }
-  
-}
+
 
 #NSG's
 resource "azurerm_network_security_group" "hubvnetNSG" {
@@ -224,17 +174,7 @@ resource "azurerm_network_security_rule" "hubvnetnsgrule1" {
 }
 
 
-resource "azurerm_subnet_network_security_group_association" "hubvnetnsg-assoc" {
-  network_security_group_id = azurerm_network_security_group.hubvnetNSG.id
-  subnet_id                 = azurerm_subnet.hubdefaultsubnet.id
-  timeouts {
-    create = "1h"
-    read = "1h"
-    update = "1h"
-    delete = "1h"
-  }
-  
-}
+
 resource "azurerm_network_security_group" "spokevnetNSG" {
   location            = azurerm_resource_group.RG.location
   name                = "AZ-spoke-vnet-default-nsg"
@@ -268,17 +208,7 @@ resource "azurerm_network_security_rule" "spokevnetnsgrule1" {
   
 }
 
-resource "azurerm_subnet_network_security_group_association" "spokevnetnsg-assoc" {
-  network_security_group_id = azurerm_network_security_group.spokevnetNSG.id
-  subnet_id                 = azurerm_subnet.spokedefaultsubnet.id
-  timeouts {
-    create = "1h"
-    read = "1h"
-    update = "1h"
-    delete = "1h"
-  }
-  
-}
+
 resource "azurerm_network_security_group" "onpremvnetNSG" {
   location            = azurerm_resource_group.RG.location
   name                = "onprem-vnet-default-nsg"
@@ -312,17 +242,7 @@ resource "azurerm_network_security_rule" "onpremvnetnsgrule1" {
   
 }
 
-resource "azurerm_subnet_network_security_group_association" "onpremvnetnsg-assoc" {
-  network_security_group_id = azurerm_network_security_group.onpremvnetNSG.id
-  subnet_id                 = azurerm_subnet.onpremdefaultsubnet.id
-  timeouts {
-    create = "1h"
-    read = "1h"
-    update = "1h"
-    delete = "1h"
-  }
-  
-}
+
 
 #Public IP's
 resource "azurerm_public_ip" "azurevpngw-pip" {
@@ -405,7 +325,7 @@ resource "azurerm_virtual_network_gateway" "azurevpngw" {
     name                          = "vnetGatewayConfig"
     public_ip_address_id          = azurerm_public_ip.azurevpngw-pip.id
     private_ip_address_allocation = "Dynamic"
-    subnet_id                     = azurerm_subnet.hubGWsubnet.id
+    subnet_id                     = azurerm_virtual_network.hub-vnet.subnet.*.id[1]
   }
   timeouts {
     create = "1h"
@@ -426,7 +346,7 @@ resource "azurerm_virtual_network_gateway" "onpremvpngw" {
     name                          = "vnetGatewayConfig"
     public_ip_address_id          = azurerm_public_ip.onpremvpngw-pip.id
     private_ip_address_allocation = "Dynamic"
-    subnet_id                     = azurerm_subnet.onpremGWsubnet.id
+    subnet_id                     = azurerm_virtual_network.onprem-vnet.subnet.*.id[1]
   }
   timeouts {
     create = "1h"
@@ -510,7 +430,7 @@ resource "azurerm_network_interface" "hubvm-nic" {
     name                          = "ipconfig1"
     private_ip_address_allocation = "Dynamic"
     public_ip_address_id          = azurerm_public_ip.hubvm-pip.id
-    subnet_id                     = azurerm_subnet.hubdefaultsubnet.id
+    subnet_id                     = azurerm_virtual_network.hub-vnet.subnet.*.id[0]
   }
   timeouts {
     create = "1h"
@@ -528,7 +448,7 @@ resource "azurerm_network_interface" "spokevm-nic" {
     name                          = "ipconfig1"
     private_ip_address_allocation = "Dynamic"
     public_ip_address_id          = azurerm_public_ip.spokevm-pip.id
-    subnet_id                     = azurerm_subnet.spokedefaultsubnet.id
+    subnet_id                     = azurerm_virtual_network.spoke-vnet.subnet.*.id[0]
   }
   timeouts {
     create = "1h"
@@ -546,7 +466,7 @@ resource "azurerm_network_interface" "onpremvm-nic" {
     name                          = "ipconfig1"
     private_ip_address_allocation = "Dynamic"
     public_ip_address_id          = azurerm_public_ip.onpremvm-pip.id
-    subnet_id                     = azurerm_subnet.onpremdefaultsubnet.id
+    subnet_id                     = azurerm_virtual_network.onprem-vnet.subnet.*.id[0]
   }
   timeouts {
     create = "1h"
