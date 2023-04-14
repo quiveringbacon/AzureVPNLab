@@ -7,3 +7,6 @@ The topology will look something like this:
 ![vpnlab](https://user-images.githubusercontent.com/128983862/231853551-e8d07cc3-146b-4631-8f40-fa77a807fbcb.png)
 
 
+You can run Terraform right from the Azure cloud shell by cloning this git repository with "git clone https://github.com/quiveringbacon/AzureVPNLab.git ./terraform".
+
+Then, "cd terraform" then, "terraform init" and finally "terraform apply -auto-approve" to deploy.
